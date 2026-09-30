@@ -1,35 +1,41 @@
-# agents.md
+# AGENTS.md
 
-Instructions for any AI coding agent working on this project. Read this before changing anything.
+Read this before making significant changes.
 
-## Project
-A mobile-style todo list web app. Users pick a day from a week strip, create tasks (category, name, description, date, start/end time), tick them off, delete them, and filter by All / To do / Done. Tasks persist in the browser via localStorage.
+## Overview
+AI Todo: a no-login todo app with AI assistance. Requirements live in `PRD.md`. Deployed on Vercel.
 
 ## Stack
-- Plain HTML, CSS, and JavaScript. No frameworks, no build step, no dependencies.
-- Files: `index.html`, `style.css`, `script.js`.
+Next.js (App Router), JavaScript (no TypeScript), Tailwind CSS v3, lucide-react icons. Todos persist in localStorage. AI calls go through `app/api/ai/route.js`.
 
-## How to run
-Open `index.html` in a browser, or run `python3 -m http.server` in this folder and visit http://localhost:8000.
+## Architecture rules
+- The browser never sees the AI key. Only `lib/ai.js` reads `process.env.AI_API_KEY`. Never use `NEXT_PUBLIC_` for secrets.
+- All storage goes through `lib/storage.js` so localStorage can later become a database.
+- All AI output is validated with `lib/validate.js` (`cleanAI`) on both server and client before use.
+- Todo features must work with AI unavailable.
+- AI results are suggestions: users review before anything is added.
+
+## File organization
+- `app/` routes and layout; `app/api/ai/route.js` is the only API route.
+- `components/` UI. `lib/` non-UI logic (`ai.js` server-only, `storage.js` client-only, `validate.js` shared).
 
 ## Conventions
-- Vanilla JS, `const`/`let`, no `var`. Small functions with one job each.
-- State lives in one `todos` array of `{id, title, desc, category, date (YYYY-MM-DD), start, end, done}`; every change goes through it, then calls `save()` and `render()`.
-- Icons are inline SVG paths in `ICON_PATHS`; no icon libraries.
-- Never insert user text with `innerHTML`. Use `textContent`.
-- CSS colors and spacing come from the variables in `:root`.
-- Keep the UI keyboard-accessible with visible focus styles.
-- Button labels are verbs: "Add task", "Delete", "Clear completed".
+- Functional components, named handlers, 2-space indent, single quotes, relative imports.
+- Files: PascalCase for components, camelCase for lib files. Todo shape is defined in `PRD.md` section 13.
+- Accessibility: semantic HTML, labelled inputs, visible focus, 44px touch targets, no horizontal scroll on mobile.
+- User-facing errors are plain sentences and never include keys, stack traces or provider details.
 
-## Workflow
-1. Make one small change at a time.
-2. Test in the browser: add, complete, delete, filter, refresh (tasks must persist).
-3. Commit with a short message describing the change.
+## Security
+Validate API input (action allowlist, max 500 characters), rate limit `/api/ai`, render user text as text only (no `dangerouslySetInnerHTML`), keep `.env*` out of Git.
 
-## Do not
-- Add libraries or a build tool without being asked.
-- Rewrite files that don't need to change.
-- Commit secrets or API keys.
+## Testing
+Run `npm run build` before every commit. Add `node --test` unit tests for `lib/validate.js` and `lib/storage.js` logic when changing them. Manually check: add, edit, complete, delete, filter, refresh persistence, AI error state, mobile width.
 
-## Deploy
-Static site. Publish the repo root (no build command, no output folder) on Netlify, Vercel, GitHub Pages, or Cloudflare Pages.
+## Git
+Private GitHub repo. Small commits using `feat:`, `fix:`, `chore:`, `docs:`. Never commit secrets.
+
+## Deployment
+Vercel. Set `AI_API_KEY` (and optionally `AI_MODEL`) in project environment variables. Test the production URL after each deploy.
+
+## Modifying the project
+Keep changes minimal and within the rules above. Update `README.md` and this file if architecture or conventions change.
